@@ -91,8 +91,8 @@ selected_zone = st.selectbox("Filtrer par zone :", ["Toutes"] + zones)
 df['age'] = pd.to_numeric(df['age'], errors='coerce')
 df = df.dropna(subset=['age'])
 
- if df.empty:
-     st.warning("Aucune donnée disponible")
+if df.empty:
+    st.warning("Aucune donnée disponible")
     st.stop()
 
 min_age = int(df['age'].min())
