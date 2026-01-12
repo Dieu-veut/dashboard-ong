@@ -88,8 +88,18 @@ st.header("Filtres des bénéficiaires")
 zones = df['zone'].unique().tolist()
 selected_zone = st.selectbox("Filtrer par zone :", ["Toutes"] + zones)
 
-min_age, max_age = int(df['age'].min()), int(df['age'].max())
-selected_age = st.slider("Filtrer par âge :", min_age, max_age, (min_age, max_age))
+df = pd.read_sql("SELECT * FROM beneficiaries", conn)
+
+df['age'] = pd.to_numeric(df['age'], errors='coerce')
+df = df.dropna(subset=['age'])
+
+if df.empty:
+    st.warning("Aucune donnée disponible")
+    st.stop()
+
+min_age = int(df['age'].min())
+max_age = int(df['age'].max())
+
 
 df_filtered = df.copy()
 
