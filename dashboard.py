@@ -29,7 +29,7 @@ if not st.session_state.logged_in:
         cursor = conn.cursor(dictionary=True)
 
         cursor.execute(
-            "SELECT * FROM user WHERE username=%s AND password=%s",
+            "SELECT * FROM users WHERE username=%s AND password=%s",
             (username, password)
         )
         user = cursor.fetchone()
