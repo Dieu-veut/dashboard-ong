@@ -52,14 +52,13 @@ if not st.session_state.logged_in:
                 st.session_state.logged_in = True
                 st.session_state.user = user["username"]
                 st.success("Connexion réussie ✅")
-                # Recharge le script pour afficher le dashboard
-                st.stop()
+                st.experimental_rerun()  # relance le script pour afficher le dashboard
             else:
                 st.error("Nom d'utilisateur ou mot de passe incorrect")
         except Exception as e:
             st.error(f"Erreur de connexion à la base : {e}")
 
-    st.stop()  # arrête le script ici si pas connecté
+    st.stop()  # bloque l'accès au dashboard si pas connecté
 
 # ===============================
 # DASHBOARD
@@ -84,7 +83,7 @@ if uploaded_file is not None:
         else:
             df_new = pd.read_excel(uploaded_file)
 
-        # Nettoyage des données
+        # Nettoyage minimal
         df_new = df_new.dropna(subset=["name", "age", "zone"])
         df_new["age"] = pd.to_numeric(df_new["age"], errors="coerce")
         df_new = df_new.dropna(subset=["age"])
@@ -99,10 +98,7 @@ if uploaded_file is not None:
 
         for _, row in df_new.iterrows():
             cursor.execute(
-                """
-                INSERT INTO beneficiaries (name, age, zone)
-                VALUES (%s, %s, %s)
-                """,
+                "INSERT INTO beneficiaries (name, age, zone) VALUES (%s, %s, %s)",
                 (row["name"], row["age"], row["zone"])
             )
 
