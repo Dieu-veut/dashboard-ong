@@ -53,14 +53,19 @@ st.title("Dashboard ONG - Bénéficiaires")
 
 # ----- SECTION 1 : Import CSV -----
 st.header("Importer de nouvelles données")
+uploaded_file = st.file_uploader(
+    "Choisir un fichier CSV ou Excel",
+    type=["csv", "xlsx"]
+)
 
-uploaded_file = st.file_uploader("Choisir un fichier CSV", type="csv","xlsx")
+if uploaded_file is not None:
+    if uploaded_file.name.endswith(".csv"):
+        df = pd.read_csv(uploaded_file)
+    elif uploaded_file.name.endswith(".xlsx"):
+        df = pd.read_excel(uploaded_file)
 
-if uploaded_file.name.endswith(".csv"):
-    df = pd.read_csv(uploaded_file)
-elif uploaded_file.name.endswith(".xlsx"):
-    df = pd.read_excel(uploaded_file)
-    
+    st.success("Fichier chargé avec succès")
+    st.dataframe(df)
     # Insérer chaque ligne
     for _, row in df_new.iterrows():
         cursor.execute(
