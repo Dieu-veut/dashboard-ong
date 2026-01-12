@@ -79,7 +79,7 @@ if uploaded_file is not None:
     
     st.success("Les données ont été importées avec succès !")
 
-
+conn = get_connection()
 df = pd.read_sql("SELECT * FROM beneficiaries", conn)
 conn.close()
 
