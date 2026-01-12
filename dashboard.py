@@ -58,11 +58,11 @@ if not st.session_state.logged_in:
             conn.close()
 
             if user:
-    st.session_state.logged_in = True
-    st.session_state.user = user["username"]
-    st.success("Connexion réussie ✅")
-    # Recharge la page
-    st.stop()
+            st.session_state.logged_in = True
+            st.session_state.user = user["username"]
+            st.success("Connexion réussie ✅")
+            # Recharge la page
+            st.stop()
 
             else:
                 st.error("Nom d'utilisateur ou mot de passe incorrect")
