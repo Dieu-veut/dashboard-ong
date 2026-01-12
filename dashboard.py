@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import mysql.connector
-from sqlalchemy import create_engine
 import plotly.express as px
 
 # ===============================
@@ -19,21 +18,13 @@ if "logged_in" not in st.session_state:
 # ===============================
 # CONNEXION BASE DE DONNÉES (Railway MySQL)
 # ===============================
-DB_CONFIG = {
-    "host": "shortline.proxy.rlwy.net",
-    "port": 49015,
-    "user": "root",
-    "password": "FMIbNxZfbWGVexqtTNKaJzbOTcxvmoPP",
-    "database": "railway"
-}
-
 def get_connection():
-    return mysql.connector.connect(**DB_CONFIG)
-
-# Pour pandas.read_sql avec sqlalchemy
-def get_engine():
-    return create_engine(
-        f"mysql+mysqlconnector://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
+    return mysql.connector.connect(
+        host="shortline.proxy.rlwy.net",
+        port=49015,
+        user="root",
+        password="FMIbNxZfbWGVexqtTNKaJzbOTcxvmoPP",
+        database="railway"
     )
 
 # ===============================
@@ -61,15 +52,14 @@ if not st.session_state.logged_in:
                 st.session_state.logged_in = True
                 st.session_state.user = user["username"]
                 st.success("Connexion réussie ✅")
-                # Recharge la page
+                # Recharge le script pour afficher le dashboard
                 st.stop()
-
             else:
                 st.error("Nom d'utilisateur ou mot de passe incorrect")
         except Exception as e:
             st.error(f"Erreur de connexion à la base : {e}")
 
-    st.stop()
+    st.stop()  # arrête le script ici si pas connecté
 
 # ===============================
 # DASHBOARD
@@ -100,10 +90,10 @@ if uploaded_file is not None:
         df_new = df_new.dropna(subset=["age"])
         df_new["age"] = df_new["age"].astype(int)
 
-        st.success("Fichier chargé et nettoyé ✅")
+        st.success("Fichier chargé avec succès")
         st.dataframe(df_new)
 
-        # Insertion en base
+        # Connexion DB
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -129,8 +119,9 @@ if uploaded_file is not None:
 # LECTURE DES DONNÉES
 # ===============================
 try:
-    engine = get_engine()
-    df = pd.read_sql("SELECT * FROM beneficiaries", engine)
+    conn = get_connection()
+    df = pd.read_sql("SELECT * FROM beneficiaries", conn)
+    conn.close()
 except Exception as e:
     st.error(f"Erreur lors de la lecture des données : {e}")
     st.stop()
@@ -151,7 +142,7 @@ st.header("🎯 Filtres")
 zones = df["zone"].dropna().unique().tolist()
 selected_zone = st.selectbox("Zone", ["Toutes"] + zones)
 
-# Slider âge robuste
+# Slider âge sécurisé
 min_age = int(df["age"].min())
 max_age = int(df["age"].max())
 
