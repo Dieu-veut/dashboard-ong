@@ -88,8 +88,6 @@ st.header("Filtres des bénéficiaires")
 zones = df['zone'].unique().tolist()
 selected_zone = st.selectbox("Filtrer par zone :", ["Toutes"] + zones)
 
-df = pd.read_sql("SELECT * FROM beneficiaries", conn)
-
 df['age'] = pd.to_numeric(df['age'], errors='coerce')
 df = df.dropna(subset=['age'])
 
