@@ -37,28 +37,27 @@ if not st.session_state.logged_in:
     password = st.text_input("Mot de passe", type="password")
 
     if st.button("Se connecter"):
-        try:
-            conn = get_connection()
-            cursor = conn.cursor(dictionary=True)
-            cursor.execute(
-                "SELECT * FROM users WHERE username=%s AND password=%s",
-                (username, password)
-            )
-            user = cursor.fetchone()
-            cursor.close()
-            conn.close()
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
 
-            if user:
-                st.session_state.logged_in = True
-                st.session_state.user = user["username"]
-                st.success("Connexion réussie ✅")
-                st.experimental_rerun()  # relance le script pour afficher le dashboard
-            else:
-                st.error("Nom d'utilisateur ou mot de passe incorrect")
-        except Exception as e:
-            st.error(f"Erreur de connexion à la base : {e}")
+        cursor.execute(
+            "SELECT * FROM users WHERE username=%s AND password=%s",
+            (username, password)
+        )
+        user = cursor.fetchone()
 
-    st.stop()  # bloque l'accès au dashboard si pas connecté
+        cursor.close()
+        conn.close()
+
+        if user:
+            st.session_state.logged_in = True
+            st.session_state.user = user["username"]
+            st.success("Connexion réussie ✅")
+            st.rerun()
+        else:
+            st.error("Nom d'utilisateur ou mot de passe incorrect")
+
+    st.stop()
 
 # ===============================
 # DASHBOARD
@@ -77,50 +76,39 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
-    try:
-        if uploaded_file.name.endswith(".csv"):
-            df_new = pd.read_csv(uploaded_file)
-        else:
-            df_new = pd.read_excel(uploaded_file)
+    if uploaded_file.name.endswith(".csv"):
+        df_new = pd.read_csv(uploaded_file)
+    else:
+        df_new = pd.read_excel(uploaded_file)
 
-        # Nettoyage minimal
-        df_new = df_new.dropna(subset=["name", "age", "zone"])
-        df_new["age"] = pd.to_numeric(df_new["age"], errors="coerce")
-        df_new = df_new.dropna(subset=["age"])
-        df_new["age"] = df_new["age"].astype(int)
+    st.success("Fichier chargé avec succès")
+    st.dataframe(df_new)
 
-        st.success("Fichier chargé avec succès")
-        st.dataframe(df_new)
+    # Connexion DB
+    conn = get_connection()
+    cursor = conn.cursor()
 
-        # Connexion DB
-        conn = get_connection()
-        cursor = conn.cursor()
+    for _, row in df_new.iterrows():
+        cursor.execute(
+            """
+            INSERT INTO beneficiaries (name, age, zone)
+            VALUES (%s, %s, %s)
+            """,
+            (row["name"], int(row["age"]), row["zone"])
+        )
 
-        for _, row in df_new.iterrows():
-            cursor.execute(
-                "INSERT INTO beneficiaries (name, age, zone) VALUES (%s, %s, %s)",
-                (row["name"], row["age"], row["zone"])
-            )
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        st.success("✅ Données enregistrées dans la base")
-
-    except Exception as e:
-        st.error(f"Erreur lors du traitement du fichier : {e}")
+    st.success("✅ Données enregistrées dans la base")
 
 # ===============================
 # LECTURE DES DONNÉES
 # ===============================
-try:
-    conn = get_connection()
-    df = pd.read_sql("SELECT * FROM beneficiaries", conn)
-    conn.close()
-except Exception as e:
-    st.error(f"Erreur lors de la lecture des données : {e}")
-    st.stop()
+conn = get_connection()
+df = pd.read_sql("SELECT * FROM beneficiaries", conn)
+conn.close()
 
 if df.empty:
     st.warning("Aucune donnée disponible")
@@ -128,17 +116,15 @@ if df.empty:
 
 df["age"] = pd.to_numeric(df["age"], errors="coerce")
 df = df.dropna(subset=["age"])
-df["age"] = df["age"].astype(int)
 
 # ===============================
 # FILTRES
 # ===============================
 st.header("🎯 Filtres")
 
-zones = df["zone"].dropna().unique().tolist()
+zones = df["zone"].unique().tolist()
 selected_zone = st.selectbox("Zone", ["Toutes"] + zones)
 
-# Slider âge sécurisé
 min_age = int(df["age"].min())
 max_age = int(df["age"].max())
 
@@ -146,7 +132,7 @@ selected_age = st.slider(
     "Âge",
     min_value=18,
     max_value=120,
-    value=(max(min_age, 18), min(max_age, 120))
+    value=(min_age, max_age)
 )
 
 df_filtered = df.copy()
@@ -169,7 +155,7 @@ st.dataframe(df_filtered)
 # GRAPHIQUE
 # ===============================
 st.subheader("📊 Répartition par zone")
-df_grouped = df_filtered.groupby("zone").size().reset_index(name="total")
+df_grouped = df.groupby("zone").size().reset_index(name="total")
 
 fig = px.bar(
     df_grouped,
@@ -178,4 +164,4 @@ fig = px.bar(
     title="Nombre de bénéficiaires par zone"
 )
 
-st.plotly_chart(fig, use_container_width=True)
+st.plotly_chart(fig, use_container_width=True)          
