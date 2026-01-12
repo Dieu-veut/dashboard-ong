@@ -130,8 +130,8 @@ max_age = int(df["age"].max())
 
 selected_age = st.slider(
     "Âge",
-    min_value=min_age,
-    max_value=max_age,
+    min_value=18,
+    max_value=120,
     value=(min_age, max_age)
 )
 
