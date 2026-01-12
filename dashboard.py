@@ -48,7 +48,6 @@ if not st.session_state.logged_in:
     st.stop()   # 🔥 BLOQUE LE DASHBOARD
 
 
-
 st.set_page_config(page_title="Dashboard ONG", layout="wide")
 st.title("Dashboard ONG - Bénéficiaires")
 
